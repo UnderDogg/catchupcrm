@@ -190,6 +190,7 @@ return [
         Stevebauman\Purify\PurifyServiceProvider::class,
         Davibennun\LaravelPushNotification\LaravelPushNotificationServiceProvider::class,
         //YAAP\Theme\ThemeServiceProvider::class,
+        //'Nwidart\Themify\ThemifyServiceProvider',
 
         /*
          * Application Service Providers...
@@ -303,6 +304,7 @@ return [
         'Socialite' => Laravel\Socialite\Facades\Socialite::class,
 
         'Theme' => Caffeinated\Themes\Facades\Theme::class,
+        //'Themify' => 'Nwidart\Themify\Facades\Themify',
         //'Theme' => YAAP\Theme\Facades\Theme::class
 
     ],

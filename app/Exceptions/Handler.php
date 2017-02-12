@@ -18,8 +18,10 @@ class Handler extends ExceptionHandler
      */
     protected $dontReport = [
         AuthorizationException::class,
+        \Illuminate\Auth\AuthenticationException::class,
         HttpException::class,
         ModelNotFoundException::class,
+        \Illuminate\Session\TokenMismatchException::class,
         ValidationException::class,
     ];
 
@@ -28,25 +30,64 @@ class Handler extends ExceptionHandler
      *
      * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
      *
-     * @param \Exception $e
+     * @param \Exception $exception
      *
      * @return void
      */
-    public function report(Exception $e)
+    public function report(Exception $exception)
     {
-        parent::report($e);
+        parent::report($exception);
     }
 
     /**
      * Render an exception into an HTTP response.
      *
      * @param \Illuminate\Http\Request $request
-     * @param \Exception               $e
+     * @param \Exception $exception
      *
      * @return \Illuminate\Http\Response
      */
-    public function render($request, Exception $e)
+    public function render($request, Exception $exception)
     {
-        return parent::render($request, $e);
+        return parent::render($request, $exception);
+    }
+
+
+    protected function convertExceptionToResponse(Exception $exception)
+    {
+        if (config('app.debug')) {
+            $whoops = new \Whoops\Run;
+            if (request()->wantsJson()) {
+                $whoops->pushHandler(new \Whoops\Handler\JsonResponseHandler());
+            } else {
+                $whoops->pushHandler(new \Whoops\Handler\PrettyPageHandler);
+            }
+
+            return response()->make(
+                $whoops->handleException($exception),
+                method_exists($exception, 'getStatusCode') ? $exception->getStatusCode() : 500,
+                method_exists($exception, 'getHeaders') ? $exception->getHeaders() : []
+            );
+        }
+
+        return parent::convertExceptionToResponse($exception);
+    }
+
+
+
+    /**
+     * Convert an authentication exception into an unauthenticated response.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Auth\AuthenticationException  $exception
+     * @return \Illuminate\Http\Response
+     */
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['error' => 'Unauthenticated.'], 401);
+        }
+
+        return redirect()->guest('login');
     }
 }
